@@ -69,7 +69,6 @@ func TestGetNonExistentProduct(t *testing.T) {
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
-
 }
 
 func TestCreateProduct(t *testing.T) {

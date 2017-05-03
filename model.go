@@ -1,6 +1,9 @@
 package main
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+)
 
 type product struct {
 	ID    int     `json:"id"`
@@ -8,6 +11,38 @@ type product struct {
 	Price float64 `json:"price"`
 }
 
+type short_url struct {
+	ID          int    `json:"id"`
+	destination string `json:"destination"`
+	shortcode   string `json:"shortcode"`
+}
+
+func (s *short_url) getShortUrl(db *sql.DB) error {
+	return db.QueryRow("SELECT id, destination FROM short_urls WHERE shortcode=?", s.shortcode).Scan(&s.ID, &s.destination)
+}
+
+func (s *short_url) createShortUrl(db *sql.DB) error {
+	stmt, err := db.Prepare("INSERT INTO short_urls(destination, shortcode) VALUES(?, ?)")
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	}
+	res, err := stmt.Exec(s.destination, s.shortcode)
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	} else {
+		id, err := res.LastInsertId()
+		if err != nil {
+			return err
+		} else {
+			s.ID = int(id)
+		}
+	}
+
+	return nil
+
+}
 func (p *product) getProduct(db *sql.DB) error {
 	return db.QueryRow("SELECT name, price FROM products WHERE id=?", p.ID).Scan(&p.Name, &p.Price)
 }

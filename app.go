@@ -30,6 +30,7 @@ func (a *App) Initialize(user, password, dbname string) {
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
+	a.initUrlRoutes()
 }
 func (a *App) Run(addr string) {
 	log.Fatal(http.ListenAndServe(":8080", a.Router))
@@ -41,6 +42,24 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.getProduct).Methods("GET")
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.updateProduct).Methods("PUT")
 	a.Router.HandleFunc("/product/{id:[0-9]+}", a.deleteProduct).Methods("DELETE")
+}
+
+func (a *App) initUrlRoutes() {
+	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
+	a.Router.HandleFunc("/api/url", a.createShortUrl).Methods("POST")
+}
+
+func (a *App) forwardUrl(w http.ResponseWriter, r *http.Request) {
+	fragment := r.FormValue("fragment")
+	if fragment == "url" {
+		http.Redirect(w, r, "https://myob.com", 301)
+	} else {
+		http.Redirect(w, r, "https://google.com", 301)
+	}
+}
+
+func (a *App) createShortUrl(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (a *App) getProducts(w http.ResponseWriter, r *http.Request) {
