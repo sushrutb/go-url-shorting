@@ -115,31 +115,34 @@ func TestUpdateProduct(t *testing.T) {
 	id, err := addProduct()
 
 	if err != nil {
-		req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
-		response := executeRequest(req)
-		var originalProduct map[string]interface{}
-		json.Unmarshal(response.Body.Bytes(), &originalProduct)
-
-		payload := []byte(`{"name":"test product - updated name","price":11.22}`)
-
-		req, _ = http.NewRequest("PUT", fmt.Sprintf("/product/%d", id), bytes.NewBuffer(payload))
-		response = executeRequest(req)
-
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		var m map[string]interface{}
-		json.Unmarshal(response.Body.Bytes(), &m)
-
-		if m["id"] != originalProduct["id"] {
-			t.Errorf("Expected the id to remain the same (%v). Got %v", originalProduct["id"], m["id"])
-		}
-		if m["name"] == originalProduct["name"] {
-			t.Errorf("Expected the name to change from '%v' to '%v'. Got %v", originalProduct["name"], m["name"], m["name"])
-		}
-		if m["price"] == originalProduct["price"] {
-			t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalProduct["price"], m["price"], m["price"])
-		}
+		log.Fatal(err.Error())
 	}
+
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+	response := executeRequest(req)
+	var originalProduct map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &originalProduct)
+
+	payload := []byte(`{"name":"test product - updated name","price":11}`)
+
+	req, _ = http.NewRequest("PUT", fmt.Sprintf("/product/%d", id), bytes.NewBuffer(payload))
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	var m map[string]interface{}
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["id"] != originalProduct["id"] {
+		t.Errorf("Expected the id to remain the same (%v). Got %v", originalProduct["id"], m["id"])
+	}
+	if m["name"] == originalProduct["name"] {
+		t.Errorf("Expected the name to change from '%v' to '%v'. Got %v", originalProduct["name"], m["name"], m["name"])
+	}
+	if m["price"] == originalProduct["price"] {
+		t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalProduct["price"], m["price"], m["price"])
+	}
+
 }
 
 func TestDeleteProduct(t *testing.T) {
@@ -147,19 +150,21 @@ func TestDeleteProduct(t *testing.T) {
 
 	id, err := addProduct()
 	if err != nil {
-		req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
-		response := executeRequest(req)
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		req, _ = http.NewRequest("DELETE", fmt.Sprintf("/product/%d", id), nil)
-		response = executeRequest(req)
-
-		checkResponseCode(t, http.StatusOK, response.Code)
-
-		req, _ = http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
-		response = executeRequest(req)
-		checkResponseCode(t, http.StatusNotFound, response.Code)
+		log.Fatal(err.Error())
 	}
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("DELETE", fmt.Sprintf("/product/%d", id), nil)
+	response = executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+
+	req, _ = http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+
 }
 
 func addProduct() (id int64, err error) {
