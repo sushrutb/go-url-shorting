@@ -137,7 +137,7 @@ func (a *App) getProduct(w http.ResponseWriter, r *http.Request) {
 		case sql.ErrNoRows:
 			respondWithError(w, http.StatusNotFound, "Product not found")
 		default:
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			respondWithError(w, http.StatusInternalServerError, "Some error")
 		}
 		return
 	}

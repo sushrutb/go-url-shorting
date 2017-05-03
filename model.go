@@ -9,7 +9,7 @@ type product struct {
 }
 
 func (p *product) getProduct(db *sql.DB) error {
-	return db.QueryRow("SELECT name, price FROM products WHERE id=$1", p.ID).Scan(&p.Name, &p.Price)
+	return db.QueryRow("SELECT name, price FROM products WHERE id=?", p.ID).Scan(&p.Name, &p.Price)
 }
 
 func (p *product) deleteProduct(db *sql.DB) error {
@@ -18,9 +18,25 @@ func (p *product) deleteProduct(db *sql.DB) error {
 	return err
 }
 
-func (p *product) updateProduct(db *sql.DB) error {
-	_, err := db.Exec("UPDATE products SET name=$1, price=$2 WHERE id=$3", p.Name, p.Price, p.ID)
+// func (p *product) deleteProduct(db *sql.DB) error {
+// 	stmt, err := db.Prepare("DELETE FROM products WHERE id=?")
+// 	if err == nil {
+// 		_, err := stmt.Exec(p.ID)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return err
+// }
 
+func (p *product) updateProduct(db *sql.DB) error {
+	stmt, err := db.Prepare("UPDATE products SET name=?, price=? WHERE id=?")
+	if err == nil {
+		_, err := stmt.Exec(p.Name, p.Price, p.ID)
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
