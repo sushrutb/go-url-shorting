@@ -13,12 +13,12 @@ type product struct {
 
 type short_url struct {
 	ID          int    `json:"id"`
-	destination string `json:"destination"`
-	shortcode   string `json:"shortcode"`
+	Destination string `json:"destination"`
+	Shortcode   string `json:"shortcode"`
 }
 
 func (s *short_url) getShortUrl(db *sql.DB) error {
-	return db.QueryRow("SELECT id, destination FROM short_urls WHERE shortcode=?", s.shortcode).Scan(&s.ID, &s.destination)
+	return db.QueryRow("SELECT id, destination FROM short_urls WHERE shortcode=?", s.Shortcode).Scan(&s.ID, &s.Destination)
 }
 
 func (s *short_url) createShortUrl(db *sql.DB) error {
@@ -27,7 +27,7 @@ func (s *short_url) createShortUrl(db *sql.DB) error {
 		log.Fatal(err.Error())
 		return err
 	}
-	res, err := stmt.Exec(s.destination, s.shortcode)
+	res, err := stmt.Exec(s.Destination, s.Shortcode)
 	if err != nil {
 		log.Fatal(err.Error())
 		return err
@@ -39,7 +39,6 @@ func (s *short_url) createShortUrl(db *sql.DB) error {
 			s.ID = int(id)
 		}
 	}
-
 	return nil
 
 }
