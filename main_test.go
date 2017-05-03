@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"."
@@ -63,27 +62,27 @@ func TestEmptyTable(t *testing.T) {
 	}
 }
 
-func TestGetNonExistentProduct(t *testing.T) {
-	clearTable()
-
-	req, _ := http.NewRequest("GET", "/products/11", nil)
-	response := executeRequest(req)
-
-	checkResponseCode(t, http.StatusNotFound, response.Code)
-
-	var m map[string]string
-	json.Unmarshal(response.Body.Bytes(), &m)
-	if m["error"] != "Product not found" {
-		t.Errorf("Expected the error kye of the response to be set to Product not found. Got %s", m["error"])
-	}
-}
+// func TestGetNonExistentProduct(t *testing.T) {
+// 	clearTable()
+//
+// 	req, _ := http.NewRequest("GET", "/products/11", nil)
+// 	response := executeRequest(req)
+//
+// 	checkResponseCode(t, http.StatusNotFound, response.Code)
+//
+// 	var m map[string]string
+// 	json.Unmarshal(response.Body.Bytes(), &m)
+// 	if m["error"] != "Product not found" {
+// 		t.Errorf("Expected the error key of the response to be set to Product not found. Got %s", m["error"])
+// 	}
+// }
 
 func TestCreateProduct(t *testing.T) {
 	clearTable()
 
 	payload := []byte(`{"name":"test product","price":11.22}`)
 
-	req, _ := http.NewRequest("POST", "/products", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("POST", "/product", bytes.NewBuffer(payload))
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)
@@ -92,11 +91,11 @@ func TestCreateProduct(t *testing.T) {
 	json.Unmarshal(response.Body.Bytes(), &m)
 
 	if m["name"] != "test product" {
-		t.Errorf("Expected product name to be 'Test Product'. Got %v", m["name"])
+		t.Errorf("Expected product name to be 'test product'. Got '%v'", m["name"])
 	}
 
 	if m["price"] != 11.22 {
-		t.Errorf("Expected price to be '11.22'. Got %v", m["price"])
+		t.Errorf("Expected product price to be '11.22'. Got '%v'", m["price"])
 	}
 }
 
@@ -113,15 +112,63 @@ func TestGetProduct(t *testing.T) {
 func TestUpdateProduct(t *testing.T) {
 	clearTable()
 
-	id, err = addProduct()
+	id, err := addProduct()
 
 	if err != nil {
-		req, _ := http.
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+		response := executeRequest(req)
+		var originalProduct map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &originalProduct)
+
+		payload := []byte(`{"name":"test product - updated name","price":11.22}`)
+
+		req, _ = http.NewRequest("PUT", fmt.Sprintf("/product/%d", id), bytes.NewBuffer(payload))
+		response = executeRequest(req)
+
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		var m map[string]interface{}
+		json.Unmarshal(response.Body.Bytes(), &m)
+
+		if m["id"] != originalProduct["id"] {
+			t.Errorf("Expected the id to remain the same (%v). Got %v", originalProduct["id"], m["id"])
+		}
+		if m["name"] == originalProduct["name"] {
+			t.Errorf("Expected the name to change from '%v' to '%v'. Got %v", originalProduct["name"], m["name"], m["name"])
+		}
+		if m["price"] == originalProduct["price"] {
+			t.Errorf("Expected the price to change from '%v' to '%v'. Got '%v'", originalProduct["price"], m["price"], m["price"])
+		}
+	}
+}
+
+func TestDeleteProduct(t *testing.T) {
+	clearTable()
+
+	id, err := addProduct()
+	if err != nil {
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		req, _ = http.NewRequest("DELETE", fmt.Sprintf("/product/%d", id), nil)
+		response = executeRequest(req)
+
+		checkResponseCode(t, http.StatusOK, response.Code)
+
+		req, _ = http.NewRequest("GET", fmt.Sprintf("/product/%d", id), nil)
+		response = executeRequest(req)
+		checkResponseCode(t, http.StatusNotFound, response.Code)
 	}
 }
 
 func addProduct() (id int64, err error) {
-	res, err := a.DB.Exec("INSERT INTO products(name, price) VALUES($1, $2)", "Product 1")
+	stmt, err := a.DB.Prepare("INSERT INTO products(name, price) VALUES(?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res, err := stmt.Exec("Product 1", 11.22)
 	if err != nil {
 		println("Exec err:", err.Error())
 	} else {
@@ -131,16 +178,6 @@ func addProduct() (id int64, err error) {
 		}
 	}
 	return id, err
-}
-
-func addProducts(count int) {
-	if count < 1 {
-		count = 1
-	}
-
-	for i := 0; i < count; i++ {
-		a.DB.Exec("INSERT INTO products(name, price) VALUES($1, $2)", "Product "+strconv.Itoa(i), (i+1.0)*10)
-	}
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
