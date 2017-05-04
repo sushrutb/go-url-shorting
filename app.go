@@ -47,13 +47,23 @@ func (a *App) initializeRoutes() {
 
 func (a *App) initUrlRoutes() {
 	a.Router.HandleFunc("/api/url", a.createShortUrl).Methods("POST")
-	a.Router.HandleFunc("/add", a.addUrlHandler).Methods("GET")
+	a.Router.HandleFunc("/add", a.addUrlViewHandler).Methods("GET")
+	a.Router.HandleFunc("/add", a.addUrlHandler).Methods("POST")
 	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
 }
 
-func (a *App) addUrlHandler(w http.ResponseWriter, r *http.Request) {
+func (a *App) addUrlViewHandler(w http.ResponseWriter, r *http.Request) {
 	renderView("add_url.html", w, r)
+}
+
+func (a *App) addUrlHandler(w http.ResponseWriter, r *http.Request) {
+	url := &short_url{Destination: r.FormValue("destination"), Shortcode: r.FormValue("shortcode")}
+	err := url.createShortUrl(a.DB)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
