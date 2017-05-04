@@ -60,6 +60,13 @@ const urlTableCreationQuery = `CREATE TABLE IF NOT EXISTS short_urls
   CONSTRAINT short_urls_pkey PRIMARY KEY (id)
 )`
 
+const statTableCreationQuery = `CREATE TABLE IF NOT EXISTS url_stats
+(
+  id SERIAL,
+  shortcode TEXT NOT NULL
+)
+`
+
 // func TestEmptyTable(t *testing.T) {
 // 	clearTable()
 //
