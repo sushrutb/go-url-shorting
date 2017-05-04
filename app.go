@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -46,7 +47,33 @@ func (a *App) initializeRoutes() {
 
 func (a *App) initUrlRoutes() {
 	a.Router.HandleFunc("/api/url", a.createShortUrl).Methods("POST")
+	a.Router.HandleFunc("/add", a.addUrlViewHandler).Methods("GET")
+	a.Router.HandleFunc("/add", a.addUrlHandler).Methods("POST")
+	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
+}
+
+func (a *App) addUrlViewHandler(w http.ResponseWriter, r *http.Request) {
+	renderView("add_url.html", w, r)
+}
+
+func (a *App) addUrlHandler(w http.ResponseWriter, r *http.Request) {
+	url := &short_url{Destination: r.FormValue("destination"), Shortcode: r.FormValue("shortcode")}
+	err := url.createShortUrl(a.DB)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
+	urls, err := getShortUrls(a.DB)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	t, _ := template.ParseFiles("index.html")
+	t.Execute(w, urls)
 }
 
 func (a *App) forwardUrl(w http.ResponseWriter, r *http.Request) {
@@ -193,4 +220,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func renderView(filename string, w http.ResponseWriter, r *http.Request) {
+	t, _ := template.ParseFiles(filename)
+	t.Execute(w, nil)
 }
