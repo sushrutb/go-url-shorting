@@ -50,12 +50,16 @@ func (a *App) initUrlRoutes() {
 }
 
 func (a *App) forwardUrl(w http.ResponseWriter, r *http.Request) {
-	fragment := r.FormValue("fragment")
-	if fragment == "url" {
-		http.Redirect(w, r, "https://myob.com", 301)
-	} else {
-		http.Redirect(w, r, "https://google.com", 301)
+	vars := mux.Vars(r)
+	var s short_url
+
+	s.Shortcode = vars["fragment"]
+
+	if err := s.getShortUrl(a.DB); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
+	http.Redirect(w, r, s.Destination, 307)
 }
 
 func (a *App) createShortUrl(w http.ResponseWriter, r *http.Request) {
