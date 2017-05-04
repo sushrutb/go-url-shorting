@@ -47,8 +47,13 @@ func (a *App) initializeRoutes() {
 
 func (a *App) initUrlRoutes() {
 	a.Router.HandleFunc("/api/url", a.createShortUrl).Methods("POST")
+	a.Router.HandleFunc("/add", a.addUrlHandler).Methods("GET")
 	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
+}
+
+func (a *App) addUrlHandler(w http.ResponseWriter, r *http.Request) {
+	renderView("add_url.html", w, r)
 }
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -205,4 +210,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func renderView(filename string, w http.ResponseWriter, r *http.Request) {
+	t, _ := template.ParseFiles(filename)
+	t.Execute(w, nil)
 }
