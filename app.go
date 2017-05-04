@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -46,7 +47,18 @@ func (a *App) initializeRoutes() {
 
 func (a *App) initUrlRoutes() {
 	a.Router.HandleFunc("/api/url", a.createShortUrl).Methods("POST")
+	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
 	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
+}
+
+func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
+	urls, err := getShortUrls(a.DB)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	t, _ := template.ParseFiles("index.html")
+	t.Execute(w, urls)
 }
 
 func (a *App) forwardUrl(w http.ResponseWriter, r *http.Request) {

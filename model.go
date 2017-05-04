@@ -21,6 +21,28 @@ func (s *short_url) getShortUrl(db *sql.DB) error {
 	return db.QueryRow("SELECT id, destination FROM short_urls WHERE shortcode=?", s.Shortcode).Scan(&s.ID, &s.Destination)
 }
 
+func getShortUrls(db *sql.DB) ([]short_url, error) {
+	rows, err := db.Query("SELECT id, destination, shortcode FROM short_urls")
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	urls := []short_url{}
+
+	for rows.Next() {
+		var url short_url
+		if err := rows.Scan(&url.ID, &url.Destination, &url.Shortcode); err != nil {
+			return nil, err
+		}
+		urls = append(urls, url)
+	}
+
+	return urls, nil
+}
+
 func (s *short_url) createShortUrl(db *sql.DB) error {
 	stmt, err := db.Prepare("INSERT INTO short_urls(destination, shortcode) VALUES(?, ?)")
 	if err != nil {
