@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -34,7 +35,7 @@ func (a *App) Initialize(user, password, dbname string) {
 	a.initUrlRoutes()
 }
 func (a *App) Run(addr string) {
-	log.Fatal(http.ListenAndServe(":8080", a.Router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), a.Router))
 }
 
 func (a *App) initializeRoutes() {
