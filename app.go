@@ -50,7 +50,17 @@ func (a *App) initUrlRoutes() {
 	a.Router.HandleFunc("/add", a.addUrlViewHandler).Methods("GET")
 	a.Router.HandleFunc("/add", a.addUrlHandler).Methods("POST")
 	a.Router.HandleFunc("/", a.indexHandler).Methods("GET")
+	a.Router.HandleFunc("/stats", a.statsHandler).Methods("GET")
 	a.Router.HandleFunc(`/{fragment:[a-zA-Z0-9=\-\/]+}`, a.forwardUrl).Methods("GET")
+}
+
+func (a *App) statsHandler(w http.ResponseWriter, r *http.Request) {
+	stats, err := getAggregateStats(a.DB)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	t, _ := template.ParseFiles("stats.html")
+	t.Execute(w, stats)
 }
 
 func (a *App) addUrlViewHandler(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +96,15 @@ func (a *App) forwardUrl(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	a.emitStat(s.Shortcode)
 	http.Redirect(w, r, s.Destination, 307)
+}
+
+func (a *App) emitStat(shortcode string) {
+	err := emitStat(a.DB, shortcode)
+	if err != nil {
+		log.Print("error in emitting stat %v ", err.Error())
+	}
 }
 
 func (a *App) createShortUrl(w http.ResponseWriter, r *http.Request) {

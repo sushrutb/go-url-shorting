@@ -17,6 +17,50 @@ type short_url struct {
 	Shortcode   string `json:"shortcode"`
 }
 
+type url_stats struct {
+	ID        int    `json:"id"`
+	Shortcode string `json:"shortcode"`
+}
+
+type aggregate_stats struct {
+	Shortcode string `json:"shortcode"`
+	Count     int    `json:"count"`
+}
+
+func getAggregateStats(db *sql.DB) ([]aggregate_stats, error) {
+
+	rows, err := db.Query("SELECT shortcode, count(*) from url_stats GROUP BY shortcode")
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	stats := []aggregate_stats{}
+
+	for rows.Next() {
+		var stat aggregate_stats
+		if err := rows.Scan(&stat.Shortcode, &stat.Count); err != nil {
+			return nil, err
+		}
+		stats = append(stats, stat)
+	}
+	return stats, nil
+}
+
+func emitStat(db *sql.DB, shortcode string) error {
+	stmt, err := db.Prepare("INSERT INTO url_stats(shortcode) VALUES(?)")
+	if err != nil {
+		log.Fatal(err.Error())
+		return err
+	}
+
+	stmt.Exec(shortcode)
+
+	return nil
+}
+
 func (s *short_url) getShortUrl(db *sql.DB) error {
 	return db.QueryRow("SELECT id, destination FROM short_urls WHERE shortcode=?", s.Shortcode).Scan(&s.ID, &s.Destination)
 }
@@ -42,7 +86,6 @@ func getShortUrls(db *sql.DB) ([]short_url, error) {
 
 	return urls, nil
 }
-
 func (s *short_url) createShortUrl(db *sql.DB) error {
 	stmt, err := db.Prepare("INSERT INTO short_urls(destination, shortcode) VALUES(?, ?)")
 	if err != nil {
